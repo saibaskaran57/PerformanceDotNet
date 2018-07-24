@@ -1,6 +1,7 @@
 ﻿namespace PerformanceDotNet.Client
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Net.Http;
     using System.Text;
@@ -30,8 +31,10 @@
             {
                 case TestMode.Single:
                     await Send(new HttpClient(new HttpHandler(this.version))); break;
-                case TestMode.Batch:
+                case TestMode.Chunk:
                     await Send(new HttpClient()); break;
+                case TestMode.Burst:
+                    await SendBurst(new HttpClient(new HttpHandler(this.version))); break;
                 case TestMode.Stream:
                     throw new NotImplementedException();
                 default:
@@ -49,6 +52,23 @@
             {
                 var response = await client.PostAsync(this.endpoint, content);
             }
+        }
+
+        private async Task SendBurst(HttpClient client)
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            var tasks = new List<Task>();
+
+            for (int i = 1; i <= totalRequest; i++)
+            {
+                tasks.Add(await Task.Factory.StartNew(async ()=>{
+                    var content = new StringContent(this.data, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync(this.endpoint, content);
+                }));
+            }
+
+            await Task.WhenAll(tasks.ToArray());
         }
     }
 }

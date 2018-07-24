@@ -4,7 +4,9 @@
     {
         Single = 0,
 
-        Batch,
+        Chunk,
+
+        Burst,
 
         Stream
     }

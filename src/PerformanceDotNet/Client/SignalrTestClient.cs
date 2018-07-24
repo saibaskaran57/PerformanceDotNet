@@ -36,7 +36,9 @@
                     await Send(connection); break;
                 case TestMode.Stream:
                     await SendStream(connection); break;
-                case TestMode.Batch:
+                case TestMode.Burst:
+                    await SendBurst(connection); break;
+                case TestMode.Chunk:
                     throw new NotImplementedException();
                 default:
                     throw new InvalidOperationException();
@@ -77,9 +79,32 @@
             {
                 while (channel.TryRead(out var message))
                 {
-                   // Console.WriteLine(message);
+                   Console.WriteLine(message);
                 }
             }
+
+            await connection.StopAsync();
+        }
+
+        private async Task SendBurst(HubConnection connection)
+        {
+            connection.On<string, string>("ReceiveMessage", (user, message) =>
+            {
+                Console.WriteLine($"{user}: {message}");
+            });
+
+            await connection.StartAsync();
+
+            var tasks = new List<Task>();
+
+            for (int i = 1; i <= totalRequest; i++)
+            {
+                tasks.Add(await Task.Factory.StartNew(async ()=> {
+                    await connection.InvokeAsync<string>("SendMessage", this.data);
+                }));
+            }
+
+            await Task.WhenAll(tasks.ToArray());
 
             await connection.StopAsync();
         }
