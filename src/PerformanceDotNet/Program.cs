@@ -19,11 +19,19 @@
             var client = new TestFactory(settings)
                 .Build();
 
-            await RunAsync(
-                settings.TestType.ToString(),
-                settings.TestMode.ToString(),
-                settings.TestRuns,
-                client.ExecuteAsync);
+            try
+            {
+                await RunAsync(
+                    settings.TestType.ToString(),
+                    settings.TestMode.ToString(),
+                    settings.TestRuns,
+                    client.ExecuteAsync);
+            }
+            catch(Exception ex)
+            {
+                Console.Error.WriteLine($"{Environment.NewLine}{ex.Message}");
+                Console.WriteLine("Test terminated with error!");
+            }
 
             Console.ReadLine();
         }
