@@ -95,9 +95,11 @@
             {
                 tasks.Add(await Task.Factory.StartNew(async () => 
                 {
-                    var channel = await connection.StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None);
+                    var channel = await connection
+                    .StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None)
+                    .ConfigureAwait(false);
 
-                    await channel.WaitToReadAsync();
+                    await channel.WaitToReadAsync().ConfigureAwait(false);
                 }));
             }
 
