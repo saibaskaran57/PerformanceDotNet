@@ -70,15 +70,7 @@
 
             var datas = PrepareData(totalRequest, this.data);
 
-            var channel = await connection.StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None);
-
-            while (await channel.WaitToReadAsync())
-            {
-                while (channel.TryRead(out var message))
-                {
-                   Console.WriteLine(message);
-                }
-            }
+            await ReadStream(connection, datas);
 
             await connection.StopAsync();
         }
@@ -93,19 +85,27 @@
 
             for (int i = 1; i <= parallelismCount; i++)
             {
-                tasks.Add(await Task.Factory.StartNew(async () => 
-                {
-                    var channel = await connection
-                    .StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None)
-                    .ConfigureAwait(false);
-
-                    await channel.WaitToReadAsync().ConfigureAwait(false);
-                }));
+                tasks.Add(ReadStream(connection, datas));
             }
 
             await Task.WhenAll(tasks.ToArray());
 
             await connection.StopAsync();
+        }
+
+        private static async Task ReadStream(HubConnection connection, IList<string> datas)
+        {
+            var channel = await connection
+            .StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None)
+            .ConfigureAwait(false);
+
+            while (await channel.WaitToReadAsync().ConfigureAwait(false))
+            {
+                while (channel.TryRead(out var message))
+                {
+                    Console.WriteLine(message);
+                }
+            }
         }
 
         private async Task SendBurst(HubConnection connection)
