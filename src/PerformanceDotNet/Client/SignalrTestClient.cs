@@ -8,7 +8,7 @@
     using Microsoft.Extensions.DependencyInjection;
     using PerformanceDotNet.Models;
 
-    internal sealed class SignalrTestClient : ITestClient
+    internal sealed class SignalrTestClient : BaseClient, ITestClient
     {
         private readonly string endpoint;
         private readonly int totalRequest;
@@ -66,12 +66,7 @@
         {
             await connection.StartAsync();
 
-            var datas = new List<string>();
-
-            for (int i = 1; i <= totalRequest; i++)
-            {
-                datas.Add(this.data);
-            }
+            var datas = PrepareData(totalRequest, this.data);
 
             var channel = await connection.StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None);
 
@@ -82,6 +77,31 @@
                    Console.WriteLine(message);
                 }
             }
+
+            await connection.StopAsync();
+        }
+
+        private async Task SendChunks(HubConnection connection)
+        {
+            await connection.StartAsync();
+
+            var datas = PrepareData(totalRequest, this.data);
+
+            var tasks = new List<Task>();
+
+            // TODO: Get total parallel chunk count.
+
+            for (int i = 1; i <= xx; i++)
+            {
+                tasks.Add(await Task.Factory.StartNew(async () => 
+                {
+                    var channel = await connection.StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None);
+
+                    await channel.WaitToReadAsync();
+                }));
+            }
+
+            await Task.WhenAll(tasks.ToArray());
 
             await connection.StopAsync();
         }
@@ -107,6 +127,18 @@
             await Task.WhenAll(tasks.ToArray());
 
             await connection.StopAsync();
+        }
+
+        private static IList<string> PrepareData(int count, string data)
+        {
+            var datas = new List<string>();
+
+            for (int i = 1; i <= count; i++)
+            {
+                datas.Add(data);
+            }
+
+            return datas;
         }
     }
 }
