@@ -8,7 +8,7 @@
     using Microsoft.Extensions.DependencyInjection;
     using PerformanceDotNet.Models;
 
-    internal sealed class SignalrTestClient : BaseClient, ITestClient
+    internal sealed class SignalrTestClient : ITestClient
     {
         private readonly string endpoint;
         private readonly int totalRequest;
