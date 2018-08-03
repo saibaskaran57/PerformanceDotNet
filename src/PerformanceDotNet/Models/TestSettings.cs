@@ -14,6 +14,6 @@
 
         public int TotalRequest { get; set; }
 
-        public int ParallelismCount { get; set; } = 1;
+        public RequestConfiguration RequestConfiguration { get; set; }
     }
 }

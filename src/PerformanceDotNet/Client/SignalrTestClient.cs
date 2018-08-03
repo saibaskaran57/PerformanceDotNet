@@ -8,20 +8,19 @@
     using Microsoft.Extensions.DependencyInjection;
     using PerformanceDotNet.Models;
 
-    internal sealed class SignalrTestClient : ITestClient
+    internal sealed class SignalrTestClient : BaseTestClient, ITestClient
     {
         private readonly string endpoint;
         private readonly int totalRequest;
         private readonly string data;
-        private readonly int parallelismCount;
         private readonly TestMode type;
 
-        public SignalrTestClient(string endpoint, int totalRequest, string data, int parallelismCount, TestMode type)
+        public SignalrTestClient(string endpoint, int totalRequest, string data, TestMode type, RequestConfiguration configuration)
+            : base(configuration)
         {
             this.endpoint = endpoint;
             this.totalRequest = totalRequest;
             this.data = data;
-            this.parallelismCount = parallelismCount;
             this.type = type;
         }
 
@@ -35,13 +34,12 @@
             switch (type)
             {
                 case TestMode.Single:
+                case TestMode.Burst:
                     await Send(connection); break;
                 case TestMode.Stream:
                     await SendStream(connection); break;
-                case TestMode.Burst:
-                    await SendBurst(connection); break;
                 case TestMode.Chunk:
-                    await SendChunks(connection); break;
+                    throw new NotImplementedException();
                 default:
                     throw new InvalidOperationException();
             }
@@ -56,10 +54,10 @@
 
             await connection.StartAsync();
 
-            for (int i = 1; i <= totalRequest; i++)
+            await Execute(async () => 
             {
                 await connection.InvokeAsync<string>("SendMessage", this.data);
-            }
+            });
 
             await connection.StopAsync();
         }
@@ -70,25 +68,10 @@
 
             var datas = PrepareData(totalRequest, this.data);
 
-            await ReadStream(connection, datas);
-
-            await connection.StopAsync();
-        }
-
-        private async Task SendChunks(HubConnection connection)
-        {
-            await connection.StartAsync();
-
-            var datas = PrepareData(totalRequest, this.data);
-
-            var tasks = new List<Task>();
-
-            for (int i = 1; i <= parallelismCount; i++)
+            await Execute(async () => 
             {
-                tasks.Add(ReadStream(connection, datas));
-            }
-
-            await Task.WhenAll(tasks.ToArray());
+                await ReadStream(connection, datas);
+            });
 
             await connection.StopAsync();
         }
@@ -106,29 +89,6 @@
                     Console.WriteLine(message);
                 }
             }
-        }
-
-        private async Task SendBurst(HubConnection connection)
-        {
-            connection.On<string, string>("ReceiveMessage", (user, message) =>
-            {
-                Console.WriteLine($"{user}: {message}");
-            });
-
-            await connection.StartAsync();
-
-            var tasks = new List<Task>();
-
-            for (int i = 1; i <= parallelismCount; i++)
-            {
-                tasks.Add(await Task.Factory.StartNew(async ()=> {
-                    await connection.InvokeAsync<string>("SendMessage", this.data);
-                }));
-            }
-
-            await Task.WhenAll(tasks.ToArray());
-
-            await connection.StopAsync();
         }
 
         private static IList<string> PrepareData(int count, string data)
