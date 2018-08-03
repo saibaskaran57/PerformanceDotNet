@@ -13,13 +13,15 @@
         private readonly string endpoint;
         private readonly int totalRequest;
         private readonly string data;
+        private readonly int parallelismCount;
         private readonly TestMode type;
 
-        public SignalrTestClient(string endpoint, int totalRequest, string data, TestMode type)
+        public SignalrTestClient(string endpoint, int totalRequest, string data, int parallelismCount, TestMode type)
         {
             this.endpoint = endpoint;
             this.totalRequest = totalRequest;
             this.data = data;
+            this.parallelismCount = parallelismCount;
             this.type = type;
         }
 
@@ -39,7 +41,7 @@
                 case TestMode.Burst:
                     await SendBurst(connection); break;
                 case TestMode.Chunk:
-                    throw new NotImplementedException();
+                    await SendChunks(connection); break;
                 default:
                     throw new InvalidOperationException();
             }
@@ -89,9 +91,7 @@
 
             var tasks = new List<Task>();
 
-            // TODO: Get total parallel chunk count.
-
-            for (int i = 1; i <= xx; i++)
+            for (int i = 1; i <= parallelismCount; i++)
             {
                 tasks.Add(await Task.Factory.StartNew(async () => 
                 {
@@ -117,7 +117,7 @@
 
             var tasks = new List<Task>();
 
-            for (int i = 1; i <= totalRequest; i++)
+            for (int i = 1; i <= parallelismCount; i++)
             {
                 tasks.Add(await Task.Factory.StartNew(async ()=> {
                     await connection.InvokeAsync<string>("SendMessage", this.data);

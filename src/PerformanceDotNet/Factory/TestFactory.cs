@@ -23,7 +23,7 @@
                 case TestType.Restv2:
                     return new RestTestClient(settings.TestEndpoint, settings.TotalRequest, HttpVersion.Version20, settings.TestData, settings.TestMode);
                 case TestType.Signalr:
-                    return new SignalrTestClient(settings.TestEndpoint, settings.TotalRequest, settings.TestData, settings.TestMode);
+                    return new SignalrTestClient(settings.TestEndpoint, settings.TotalRequest, settings.TestData, settings.ParallelismCount, settings.TestMode);
                 default:
                     throw new InvalidOperationException();
             }

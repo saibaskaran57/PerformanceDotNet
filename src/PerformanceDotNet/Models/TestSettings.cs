@@ -13,5 +13,7 @@
         public int TestRuns { get; set; }
 
         public int TotalRequest { get; set; }
+
+        public int ParallelismCount { get; set; } = 1;
     }
 }
