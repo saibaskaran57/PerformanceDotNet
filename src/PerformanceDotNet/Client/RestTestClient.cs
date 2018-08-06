@@ -14,8 +14,6 @@
         private readonly string data;
         private readonly TestMode type;
 
-        private readonly HttpClient httpClient;
-
         public RestTestClient(string endpoint, Version version, string data, TestMode type, RequestConfiguration configuration)
             : base(configuration)
         {
@@ -23,8 +21,6 @@
             this.version = version;
             this.data = data;
             this.type = type;
-
-            this.httpClient = new HttpClient();
         }
 
         public async Task ExecuteAsync()
@@ -34,7 +30,7 @@
                 case TestMode.Single:
                 case TestMode.Chunk:
                 case TestMode.Burst:
-                    await Send(); break;
+                    await Send(new HttpClient(new HttpHandler(this.version))); break;
                 case TestMode.Stream:
                     throw new NotImplementedException();
                 default:
@@ -42,7 +38,7 @@
             }
         }
 
-        private async Task Send()
+        private async Task Send(HttpClient httpClient)
         {
             await Execute(async () =>
             {
