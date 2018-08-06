@@ -1,9 +1,9 @@
 ﻿namespace PerformanceDotNet.Client
 {
     using System;
-    using System.Net;
     using System.Net.Http;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using PerformanceDotNet.Models;
 
@@ -24,7 +24,7 @@
             this.data = data;
             this.type = type;
 
-            this.httpClient = new HttpClient(new HttpHandler(this.version));
+            this.httpClient = new HttpClient();
         }
 
         public async Task ExecuteAsync()
@@ -44,13 +44,15 @@
 
         private async Task Send()
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-            var content = new StringContent(this.data, Encoding.UTF8, "application/json");
-
             await Execute(async () =>
             {
-                await httpClient.PostAsync(this.endpoint, content).ConfigureAwait(false);
+                var request = new HttpRequestMessage(HttpMethod.Post, this.endpoint)
+                {
+                    Content = new StringContent(this.data, Encoding.UTF8, "application/json"),
+                    Version = version
+                };
+
+                await httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
             });
         }
     }
