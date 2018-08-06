@@ -19,9 +19,9 @@
             switch (settings.TestType)
             {
                 case TestType.Restv1:
-                    return new RestTestClient(settings.TestEndpoint, settings.TotalRequest, HttpVersion.Version11, settings.TestData, settings.TestMode, settings.RequestConfiguration);
+                    return new RestTestClient(settings.TestEndpoint, HttpVersion.Version11, settings.TestData, settings.TestMode, settings.RequestConfiguration);
                 case TestType.Restv2:
-                    return new RestTestClient(settings.TestEndpoint, settings.TotalRequest, HttpVersion.Version20, settings.TestData, settings.TestMode, settings.RequestConfiguration);
+                    return new RestTestClient(settings.TestEndpoint, HttpVersion.Version20, settings.TestData, settings.TestMode, settings.RequestConfiguration);
                 case TestType.Signalr:
                     return new SignalrTestClient(settings.TestEndpoint, settings.TotalRequest, settings.TestData, settings.TestMode, settings.RequestConfiguration);
                 default:

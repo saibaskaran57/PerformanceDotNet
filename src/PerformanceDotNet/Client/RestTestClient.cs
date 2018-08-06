@@ -10,19 +10,17 @@
     internal sealed class RestTestClient : BaseTestClient, ITestClient
     {
         private readonly string endpoint;
-        private readonly int totalRequest;
         private readonly Version version;
         private readonly string data;
         private readonly TestMode type;
 
         private readonly HttpClient httpClient;
 
-        public RestTestClient(string endpoint, int totalRequest, Version version, string data, TestMode type, RequestConfiguration configuration)
+        public RestTestClient(string endpoint, Version version, string data, TestMode type, RequestConfiguration configuration)
             : base(configuration)
         {
             this.endpoint = endpoint;
             this.version = version;
-            this.totalRequest = totalRequest;
             this.data = data;
             this.type = type;
 
