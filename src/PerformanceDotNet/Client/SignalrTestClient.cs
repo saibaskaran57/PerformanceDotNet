@@ -54,12 +54,17 @@
 
             await connection.StartAsync();
 
-            await Execute(async () => 
+            try
             {
-                await connection.InvokeAsync<string>("SendMessage", this.data);
-            });
-
-            await connection.StopAsync();
+                await Execute(async () =>
+                {
+                    await connection.InvokeAsync<string>("SendMessage", this.data);
+                });
+            }
+            finally
+            {
+                await connection.StopAsync();
+            }
         }
 
         private async Task SendStream(HubConnection connection)
@@ -68,12 +73,17 @@
 
             var datas = PrepareData(totalRequest, this.data);
 
-            await Execute(async () => 
+            try
             {
-                await ReadStream(connection, datas);
-            });
-
-            await connection.StopAsync();
+                await Execute(async () =>
+                {
+                    await ReadStream(connection, datas);
+                });
+            }
+            finally
+            {
+                await connection.StopAsync();
+            }
         }
 
         private static async Task ReadStream(HubConnection connection, IList<string> datas)
