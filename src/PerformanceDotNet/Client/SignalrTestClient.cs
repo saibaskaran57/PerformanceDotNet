@@ -96,7 +96,7 @@
             {
                 while (channel.TryRead(out var message))
                 {
-                    Console.WriteLine(message);
+                    // Console.WriteLine(message);
                 }
             }
         }
