@@ -52,7 +52,8 @@
                     Version = version
                 };
 
-                await httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
+                var response = await httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
             });
         }
     }
