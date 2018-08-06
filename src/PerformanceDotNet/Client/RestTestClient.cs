@@ -15,6 +15,8 @@
         private readonly string data;
         private readonly TestMode type;
 
+        private readonly HttpClient httpClient;
+
         public RestTestClient(string endpoint, int totalRequest, Version version, string data, TestMode type, RequestConfiguration configuration)
             : base(configuration)
         {
@@ -23,6 +25,8 @@
             this.totalRequest = totalRequest;
             this.data = data;
             this.type = type;
+
+            this.httpClient = new HttpClient(new HttpHandler(this.version));
         }
 
         public async Task ExecuteAsync()
@@ -32,7 +36,7 @@
                 case TestMode.Single:
                 case TestMode.Chunk:
                 case TestMode.Burst:
-                    await Send(new HttpClient(new HttpHandler(this.version))); break;
+                    await Send(); break;
                 case TestMode.Stream:
                     throw new NotImplementedException();
                 default:
@@ -40,7 +44,7 @@
             }
         }
 
-        private async Task Send(HttpClient client)
+        private async Task Send()
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
@@ -48,7 +52,7 @@
 
             await Execute(async () =>
             {
-                await client.PostAsync(this.endpoint, content);
+                await httpClient.PostAsync(this.endpoint, content);
             });
         }
     }
