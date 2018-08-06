@@ -50,7 +50,7 @@
 
             await Execute(async () =>
             {
-                await httpClient.PostAsync(this.endpoint, content);
+                await httpClient.PostAsync(this.endpoint, content).ConfigureAwait(false);
             });
         }
     }
