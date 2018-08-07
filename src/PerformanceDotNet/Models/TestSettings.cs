@@ -10,6 +10,8 @@
 
         public string TestEndpoint { get; set; }
 
+        public int VirtualUsersCount { get; set; }
+
         public int TestRuns { get; set; }
 
         public int TotalRequest { get; set; }
