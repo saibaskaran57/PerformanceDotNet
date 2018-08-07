@@ -1,11 +1,12 @@
 ﻿namespace PerformanceDotNet
 {
-    using PerformanceDotNet.Factory;
-    using PerformanceDotNet.Models;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
+    using PerformanceDotNet.Factory;
+    using PerformanceDotNet.Models;
 
     internal sealed class TestRunner : ITestRunner
     {
@@ -32,27 +33,66 @@
         {
             var client = testFactory.Build();
 
-            var responseTimes = new List<double>();
+            Console.WriteLine($"Test {testType}-{testMode} started with {virtualUserCount} virtual user count");
 
-            Console.WriteLine($"Test {testType}-{testMode} started");
+            var consolidatedResult = new List<TestResult[]>();
 
             for (int i = 1; i <= testRunCount; i++)
             {
                 Console.WriteLine($"Test Run {i} started");
+                var stopwatch = Stopwatch.StartNew();
 
-                var startTime = DateTime.UtcNow;
-                await client.ExecuteAsync();
-                var endTime = DateTime.UtcNow;
-                responseTimes.Add((endTime - startTime).TotalMilliseconds);
+                var result = await RunForUsers().ConfigureAwait(false);
+                PrintDetailedResult(result);
+                consolidatedResult.Add(result);
 
                 Console.WriteLine($"Test Run {i} completed");
-                Console.WriteLine($"Time Taken for Test Run {i} - {(endTime - startTime).TotalMilliseconds}ms");
+                Console.WriteLine($"Time Taken for Test Run {i} - {stopwatch.ElapsedMilliseconds}ms");
 
                 Console.WriteLine();
             }
 
-            Console.WriteLine("Test completed");
-            Console.WriteLine($"Average Time Taken - {responseTimes.Average()}ms");
+            Console.WriteLine("Test completed!");
+            PrintConsolidatedResult(consolidatedResult);
+        }
+        
+        private async Task<TestResult[]> RunForUsers()
+        {
+            var tasks = new List<Task<TestResult>>();
+
+            for (int i = 1; i <= virtualUserCount; i++)
+            {
+                tasks.Add(Run());
+            }
+
+            return await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
+        }
+
+        private async Task<TestResult> Run()
+        {
+            var client = testFactory.Build();
+            return await client.ExecuteAsync().ConfigureAwait(false);
+        }
+
+        private static void PrintDetailedResult(TestResult[] testResult)
+        {
+            for (int i = 0; i < testResult.Length; i++)
+            {
+                var result = testResult[i];
+
+                Console.Write(Environment.NewLine);
+                Console.WriteLine($"User #{i + 1}");
+                Console.WriteLine($"Setup: {result.SetupDuration}ms");
+                Console.WriteLine($"Test: {result.TestDuration}ms");
+                Console.WriteLine($"TearDown: {result.TearDownDuration}ms");
+                Console.WriteLine($"Overall: {result.OverallDuration}ms");
+                Console.Write(Environment.NewLine);
+            }
+        }
+
+        private static void PrintConsolidatedResult(List<TestResult[]> result)
+        {
+            //Console.WriteLine($"Average Time Taken - {responseTimes.Average()}ms");
         }
     }
 }

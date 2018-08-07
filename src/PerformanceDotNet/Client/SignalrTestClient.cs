@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.SignalR.Client;
@@ -24,7 +25,7 @@
             this.type = type;
         }
 
-        public async Task ExecuteAsync()
+        public async Task<TestResult> ExecuteAsync()
         {
             var connection = new HubConnectionBuilder()
                  .WithUrl(this.endpoint)
@@ -35,9 +36,9 @@
             {
                 case TestMode.Single:
                 case TestMode.Burst:
-                    await Send(connection); break;
+                    return await Send(connection);
                 case TestMode.Stream:
-                    await SendStream(connection); break;
+                    return await SendStream(connection);
                 case TestMode.Chunk:
                     throw new NotImplementedException();
                 default:
@@ -45,45 +46,69 @@
             }
         }
 
-        private async Task Send(HubConnection connection)
+        private async Task<TestResult> Send(HubConnection connection)
         {
+            var testResult = new TestResult();
+            var stopWatch = Stopwatch.StartNew();
+
             connection.On<string, string>("ReceiveMessage", (user, message) =>
             {
                 Console.WriteLine($"{user}: {message}");
             });
 
             await connection.StartAsync();
+            testResult.CollectSetupDuration(stopWatch.ElapsedMilliseconds);
 
             try
             {
+                stopWatch.Restart();
+
                 await Execute(async () =>
                 {
                     await connection.InvokeAsync<string>("SendMessage", this.data);
                 });
+
+                testResult.CollectTestDuration(stopWatch.ElapsedMilliseconds);
             }
             finally
             {
+                stopWatch.Restart();
                 await connection.StopAsync();
+                testResult.CollectTearDownDuration(stopWatch.ElapsedMilliseconds);
             }
+
+            return testResult;
         }
 
-        private async Task SendStream(HubConnection connection)
+        private async Task<TestResult> SendStream(HubConnection connection)
         {
-            await connection.StartAsync();
-
             var datas = PrepareData(totalRequest, this.data);
+
+            var testResult = new TestResult();
+            var stopWatch = Stopwatch.StartNew();
+
+            await connection.StartAsync();
+            testResult.CollectSetupDuration(stopWatch.ElapsedMilliseconds);
 
             try
             {
+                stopWatch.Restart();
+
                 await Execute(async () =>
                 {
                     await ReadStream(connection, datas);
                 });
+
+                testResult.CollectTestDuration(stopWatch.ElapsedMilliseconds);
             }
             finally
             {
+                stopWatch.Restart();
                 await connection.StopAsync();
+                testResult.CollectTearDownDuration(stopWatch.ElapsedMilliseconds);
             }
+
+            return testResult;
         }
 
         private static async Task ReadStream(HubConnection connection, IList<string> datas)

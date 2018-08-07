@@ -1,6 +1,7 @@
 ﻿namespace PerformanceDotNet.Client
 {
     using System;
+    using System.Diagnostics;
     using System.Net.Http;
     using System.Text;
     using System.Threading;
@@ -23,9 +24,18 @@
             this.type = type;
         }
 
-        public async Task ExecuteAsync()
+        public async Task<TestResult> ExecuteAsync()
         {
+            var testResult = new TestResult();
+
+            var stopwatch = Stopwatch.StartNew();
+
             var httpClient = new HttpClient(new HttpHandler(this.version));
+
+            // Set http client initialization duration.
+            testResult.CollectSetupDuration(stopwatch.ElapsedMilliseconds);
+
+            stopwatch.Restart();
 
             switch (this.type)
             {
@@ -38,6 +48,11 @@
                 default:
                     throw new InvalidOperationException();
             }
+
+            // Set test duration.
+            testResult.CollectTestDuration(stopwatch.ElapsedMilliseconds);
+
+            return testResult;
         }
 
         private async Task Send(HttpClient httpClient)
