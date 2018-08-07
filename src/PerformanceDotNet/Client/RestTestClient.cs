@@ -25,12 +25,14 @@
 
         public async Task ExecuteAsync()
         {
+            var httpClient = new HttpClient(new HttpHandler(this.version));
+
             switch (this.type)
             {
                 case TestMode.Single:
                 case TestMode.Chunk:
                 case TestMode.Burst:
-                    await Send(new HttpClient(new HttpHandler(this.version))); break;
+                    await Send(httpClient); break;
                 case TestMode.Stream:
                     throw new NotImplementedException();
                 default:
