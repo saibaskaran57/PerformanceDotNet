@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading.Tasks;
     using PerformanceDotNet.Models;
 
@@ -14,8 +15,10 @@
             this.configuration = configuration;
         }
 
-        protected async Task Execute(Func<Task> testRunAction)
+        protected async Task<double> Execute(Func<Task> testRunAction)
         {
+            var stopWatch = Stopwatch.StartNew();
+
             switch (configuration.ExecutionType)
             {
                 case ExecutionType.Sequential:
@@ -25,6 +28,8 @@
                 default:
                     throw new InvalidOperationException();
             }
+
+            return stopWatch.ElapsedMilliseconds;
         }
 
         private async Task ExecuteSequential(Func<Task> testRunAction)
