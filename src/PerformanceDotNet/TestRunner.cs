@@ -30,8 +30,6 @@
 
         public async Task Execute()
         {
-            var client = testFactory.Build();
-
             Console.WriteLine($"Test {testType}-{testMode} started with {virtualUserCount} virtual user count");
 
             var consolidatedResult = new List<TestResult[]>();
