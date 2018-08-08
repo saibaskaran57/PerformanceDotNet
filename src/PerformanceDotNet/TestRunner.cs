@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
     using PerformanceDotNet.Factory;
@@ -40,16 +39,12 @@
             for (int i = 1; i <= testRunCount; i++)
             {
                 Console.WriteLine($"Test Run {i} started");
-                var stopwatch = Stopwatch.StartNew();
-
                 var result = await RunForUsers().ConfigureAwait(false);
-                PrintDetailedResult(result);
+                PrintResult(result);
                 consolidatedResult.Add(result);
 
                 Console.WriteLine($"Test Run {i} completed");
-                Console.WriteLine($"Time Taken for Test Run {i} - {stopwatch.ElapsedMilliseconds}ms");
-
-                Console.WriteLine();
+                Console.Write(Environment.NewLine);
             }
 
             Console.WriteLine("Test completed!");
@@ -74,9 +69,11 @@
             return await client.ExecuteAsync().ConfigureAwait(false);
         }
 
-        private static void PrintDetailedResult(TestResult[] testResult)
+        private static void PrintResult(TestResult[] testResult)
         {
-            for (int i = 0; i < testResult.Length; i++)
+            Console.WriteLine($"Overall: {testResult.Average(x => x.OverallDuration)}ms");
+
+            /*for (int i = 0; i < testResult.Length; i++)
             {
                 var result = testResult[i];
 
@@ -87,12 +84,20 @@
                 Console.WriteLine($"TearDown: {result.TearDownDuration}ms");
                 Console.WriteLine($"Overall: {result.OverallDuration}ms");
                 Console.Write(Environment.NewLine);
-            }
+            }*/
         }
 
         private static void PrintConsolidatedResult(List<TestResult[]> result)
         {
-            //Console.WriteLine($"Average Time Taken - {responseTimes.Average()}ms");
+            // Flatten the result.
+            var results = result.SelectMany(x => x);
+
+            Console.Write(Environment.NewLine);
+            Console.WriteLine($"Average Time Taken (ms)");
+            Console.WriteLine($"Setup: {results.Average(x => x.SetupDuration)}");
+            Console.WriteLine($"Test: {results.Average(x => x.TestDuration)}");
+            Console.WriteLine($"TearDown: {results.Average(x => x.TearDownDuration)}");
+            Console.WriteLine($"Overall: {results.Average(x => x.OverallDuration)}ms");
         }
     }
 }
