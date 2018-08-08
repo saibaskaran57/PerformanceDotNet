@@ -25,7 +25,7 @@
 
             try
             {
-                await testRunner.Execute();
+                await testRunner.Execute().ConfigureAwait(false);
             }
             catch(Exception ex)
             {
