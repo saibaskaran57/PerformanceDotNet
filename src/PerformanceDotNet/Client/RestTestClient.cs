@@ -35,28 +35,25 @@
             // Set http client initialization duration.
             testResult.CollectSetupDuration(stopwatch.ElapsedMilliseconds);
 
-            stopwatch.Restart();
-
             switch (this.type)
             {
                 case TestMode.Single:
                 case TestMode.Chunk:
                 case TestMode.Burst:
-                    await Send(httpClient); break;
+                    testResult.CollectTestDuration(await Send(httpClient).ConfigureAwait(false)); break;
                 case TestMode.Stream:
                     throw new NotImplementedException();
                 default:
                     throw new InvalidOperationException();
             }
 
-            // Set test duration.
-            testResult.CollectTestDuration(stopwatch.ElapsedMilliseconds);
-
             return testResult;
         }
 
-        private async Task Send(HttpClient httpClient)
+        private async Task<double> Send(HttpClient httpClient)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             await Execute(async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, this.endpoint)
@@ -68,6 +65,8 @@
                 var response = await httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
             });
+
+            return stopwatch.ElapsedMilliseconds;
         }
     }
 }

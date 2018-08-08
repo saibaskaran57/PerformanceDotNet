@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Threading.Tasks;
     using PerformanceDotNet.Models;
 
@@ -15,10 +14,8 @@
             this.configuration = configuration;
         }
 
-        protected async Task<double> Execute(Func<Task> testRunAction)
+        protected async Task Execute(Func<Task> testRunAction)
         {
-            var stopWatch = Stopwatch.StartNew();
-
             switch (configuration.ExecutionType)
             {
                 case ExecutionType.Sequential:
@@ -28,15 +25,13 @@
                 default:
                     throw new InvalidOperationException();
             }
-
-            return stopWatch.ElapsedMilliseconds;
         }
 
         private async Task ExecuteSequential(Func<Task> testRunAction)
         {
             for(int i = 1; i <= configuration.Count; i++)
             {
-                await testRunAction.Invoke();
+                await testRunAction.Invoke().ConfigureAwait(false);
             }
         }
 
@@ -49,7 +44,7 @@
                 tasks.Add(testRunAction.Invoke());
             }
 
-            await Task.WhenAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
         }
     }
 }
