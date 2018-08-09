@@ -90,6 +90,9 @@
             await connection.StartAsync();
             testResult.CollectSetupDuration(stopWatch.ElapsedMilliseconds);
 
+            // Warm up the client.
+            await ReadStream(connection, datas);
+
             try
             {
                 stopWatch.Restart();

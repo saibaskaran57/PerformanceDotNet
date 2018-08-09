@@ -29,10 +29,7 @@
             var testResult = new TestResult();
 
             var stopwatch = Stopwatch.StartNew();
-
             var httpClient = new HttpClient(new HttpHandler(this.version));
-
-            // Set http client initialization duration.
             testResult.CollectSetupDuration(stopwatch.ElapsedMilliseconds);
 
             switch (this.type)
@@ -52,17 +49,16 @@
 
         private async Task<double> Send(HttpClient httpClient)
         {
+            // Warm up the client.
+            var content = new StringContent(this.data, Encoding.UTF8, "application/json");
+            await httpClient.PostAsync(this.endpoint, content).ConfigureAwait(false);
+
             var stopwatch = Stopwatch.StartNew();
 
             await Execute(async () =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, this.endpoint)
-                {
-                    Content = new StringContent(this.data, Encoding.UTF8, "application/json"),
-                    Version = version
-                };
-
-                var response = await httpClient.SendAsync(request, CancellationToken.None).ConfigureAwait(false);
+                var stringContent = new StringContent(this.data, Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync(this.endpoint, stringContent, CancellationToken.None).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
             });
 
