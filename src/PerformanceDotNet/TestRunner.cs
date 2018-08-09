@@ -39,7 +39,12 @@
                 Console.WriteLine($"Test Run {i} started");
                 var result = await RunForUsers().ConfigureAwait(false);
                 PrintResult(result);
-                consolidatedResult.Add(result);
+
+                // Excluding the first test run for calculation.
+                if (i > 1)
+                {
+                    consolidatedResult.Add(result);
+                }
 
                 Console.WriteLine($"Test Run {i} completed");
                 Console.Write(Environment.NewLine);
