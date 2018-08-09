@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using PerformanceDotNet.Models;
 
@@ -21,7 +23,7 @@
                 case ExecutionType.Sequential:
                     await ExecuteSequential(testRunAction); break;
                 case ExecutionType.Parallel:
-                    await ExecuteParallel(testRunAction); break;
+                    await ExecuteParallel(testRunAction).ConfigureAwait(false); break;
                 default:
                     throw new InvalidOperationException();
             }
