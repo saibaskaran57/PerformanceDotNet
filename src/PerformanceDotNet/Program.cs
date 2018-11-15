@@ -14,6 +14,8 @@
         static async Task Main(string[] args)
         {
             var settings = GetAppSettings();
+            var streamOptions = GetStreamSettings();
+
             settings.TestData = GetTestData();
 
             var client = new TestFactory(settings)
@@ -71,6 +73,12 @@
         {
             var requestPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Request.txt");
             return File.ReadAllText(requestPath);
+        }
+
+        private static StreamOptions GetStreamSettings()
+        {
+            var appSettingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            return JsonConvert.DeserializeObject<StreamOptions>(File.ReadAllText(appSettingPath));
         }
     }
 }
