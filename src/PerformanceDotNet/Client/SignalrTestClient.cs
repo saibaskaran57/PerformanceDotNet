@@ -6,90 +6,96 @@
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.SignalR.Client;
     using Microsoft.Extensions.DependencyInjection;
+    using Newtonsoft.Json;
     using PerformanceDotNet.Models;
 
-    internal sealed class SignalrTestClient : BaseTestClient, ITestClient
+    internal sealed class SignalrTestClient : ITestClient
     {
         private readonly string endpoint;
+        private readonly string methodName;
         private readonly int totalRequest;
-        private readonly string data;
-        private readonly TestMode type;
+        private readonly List<object> data;
+        private readonly Func<Task> testFunction;
+        private HubConnection connection;
 
-        public SignalrTestClient(string endpoint, int totalRequest, string data, TestMode type, RequestConfiguration configuration)
-            : base(configuration)
+        public SignalrTestClient(string endpoint,string methodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration)
         {
             this.endpoint = endpoint;
+            this.methodName = methodName;
             this.totalRequest = totalRequest;
-            this.data = data;
-            this.type = type;
-        }
-
-        public async Task ExecuteAsync()
-        {
-            var connection = new HubConnectionBuilder()
-                 .WithUrl(this.endpoint)
-                 .AddMessagePackProtocol()
-                 .Build();
+            //this.data = JsonConvert.DeserializeObject<List<object>>(data);
+            this.data = new List<object>();
+            Func <Task> testRunAction;
 
             switch (type)
             {
                 case TestMode.Single:
                 case TestMode.Burst:
-                    await Send(connection); break;
+                    testRunAction = async () =>
+                    {
+                        await connection.InvokeAsync<string>(this.methodName, "Kevin", "Test").ConfigureAwait(false);
+                    };
+                    break;
                 case TestMode.Stream:
-                    await SendStream(connection); break;
+                    var datas = this.data.ToArray();
+                    testRunAction = async () =>
+                    {
+                        await ReadStream(connection, datas).ConfigureAwait(false);
+                    };
+                    break;
                 case TestMode.Chunk:
                     throw new NotImplementedException();
                 default:
                     throw new InvalidOperationException();
             }
+
+            if (configuration.ExecutionType == ExecutionType.Parallel)
+            {
+                testFunction = async () =>
+                {
+                    var tasks = new List<Task>();
+                    for (int i = 1; i <= configuration.Count; i++)
+                    {
+                        tasks.Add(testRunAction.Invoke());
+                    }
+
+                    await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
+                };
+            }
+            else
+            {
+                testFunction = async () =>
+                {
+                    for (int i = 1; i <= configuration.Count; i++)
+                    {
+                        await testRunAction.Invoke().ConfigureAwait(false);
+                    }
+                };
+            }
         }
 
-        private async Task Send(HubConnection connection)
+        public async Task ExecuteAsync()
         {
+            connection = new HubConnectionBuilder()
+                 .WithUrl(this.endpoint)
+                 .Build();
+
             connection.On<string, string>("ReceiveMessage", (user, message) =>
             {
                 Console.WriteLine($"{user}: {message}");
             });
 
-            await connection.StartAsync();
+            await connection.StartAsync().ConfigureAwait(false);
 
-            try
-            {
-                await Execute(async () =>
-                {
-                    await connection.InvokeAsync<string>("SendMessage", this.data);
-                });
-            }
-            finally
-            {
-                await connection.StopAsync();
-            }
+            await testFunction.Invoke().ConfigureAwait(false);
+
+            await connection.StopAsync().ConfigureAwait(false);
         }
 
-        private async Task SendStream(HubConnection connection)
-        {
-            await connection.StartAsync();
-
-            var datas = PrepareData(totalRequest, this.data);
-
-            try
-            {
-                await Execute(async () =>
-                {
-                    await ReadStream(connection, datas);
-                });
-            }
-            finally
-            {
-                await connection.StopAsync();
-            }
-        }
-
-        private static async Task ReadStream(HubConnection connection, IList<string> datas)
+        private async Task ReadStream(HubConnection connection, IList<object> datas)
         {
             var channel = await connection
-            .StreamAsChannelAsync<string>("Stream", datas, 100, CancellationToken.None)
+            .StreamAsChannelAsync<string>(this.methodName, "Kevin", "Test", 100, CancellationToken.None)
             .ConfigureAwait(false);
 
             while (await channel.WaitToReadAsync().ConfigureAwait(false))

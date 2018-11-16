@@ -14,7 +14,6 @@
         static async Task Main(string[] args)
         {
             var settings = GetAppSettings();
-            var streamOptions = GetStreamSettings();
 
             settings.TestData = GetTestData();
 
@@ -27,7 +26,7 @@
                     settings.TestType.ToString(),
                     settings.TestMode.ToString(),
                     settings.TestRuns,
-                    client.ExecuteAsync);
+                    client.ExecuteAsync).ConfigureAwait(false);
             }
             catch(Exception ex)
             {
@@ -49,7 +48,7 @@
                 Console.WriteLine($"Test Run {i} started");
 
                 var startTime = DateTime.UtcNow;
-                await func.Invoke();
+                await func.Invoke().ConfigureAwait(false);
                 var endTime = DateTime.UtcNow;
                 responseTimes.Add((endTime - startTime).TotalMilliseconds);
 
@@ -73,12 +72,6 @@
         {
             var requestPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Request.txt");
             return File.ReadAllText(requestPath);
-        }
-
-        private static StreamOptions GetStreamSettings()
-        {
-            var appSettingPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-            return JsonConvert.DeserializeObject<StreamOptions>(File.ReadAllText(appSettingPath));
         }
     }
 }

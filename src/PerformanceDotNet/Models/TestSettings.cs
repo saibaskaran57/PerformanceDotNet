@@ -15,5 +15,11 @@
         public int TotalRequest { get; set; }
 
         public RequestConfiguration RequestConfiguration { get; set; }
+
+        public long TestIntervalInMs { get; set; }
+
+        public long TestDurationInMs { get; set; }
+
+        public string StreamMethod { get; set; }
     }
 }
