@@ -1,5 +1,5 @@
 ﻿{
 	"Request":[
-		{ "Email": "test@example.com", "Version":"1.0" }
+		{ "Email": "test@example.com", "Version":"1.0", "ReferenceId": "KevinTest"}
 	]
 }

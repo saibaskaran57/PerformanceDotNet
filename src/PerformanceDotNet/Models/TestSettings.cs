@@ -21,5 +21,7 @@
         public long TestDurationInMs { get; set; }
 
         public string StreamMethod { get; set; }
+
+        public string StreamResponseMethod { get; set; }
     }
 }

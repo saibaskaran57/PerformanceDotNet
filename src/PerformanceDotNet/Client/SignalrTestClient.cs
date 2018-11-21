@@ -6,24 +6,24 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.SignalR.Client;
-    using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
     using PerformanceDotNet.Models;
 
     internal sealed class SignalrTestClient : ITestClient
     {
         private readonly string endpoint;
         private readonly string methodName;
+        private readonly string responseMethodName;
         private readonly int totalRequest;
         private readonly Dictionary<string, List<Dictionary<string, object>>> data;
         private readonly Func<Task> testFunction;
         private HubConnection connection;
 
-        public SignalrTestClient(string endpoint,string methodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval)
+        public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval)
         {
             this.endpoint = endpoint;
             this.methodName = methodName;
+            this.responseMethodName = responseMethodName;
             this.totalRequest = totalRequest;
             this.data = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string,object>>>>(data);
             //this.data = new List<object>();
@@ -36,7 +36,7 @@
                 case TestMode.Burst:
                     testRunAction = async () =>
                     {
-                        await connection.InvokeAsync<string>(this.methodName, firstRequest).ConfigureAwait(false);
+                        await connection.InvokeAsync<object>(this.methodName, firstRequest).ConfigureAwait(false);
                     };
                     break;
                 case TestMode.Stream:
@@ -99,9 +99,9 @@
                  .WithUrl(this.endpoint)
                  .Build();
 
-            connection.On<string, string>("ReceiveMessage", (user, message) =>
+            connection.On<object>(this.responseMethodName, (payload) =>
             {
-                Console.WriteLine($"{user}: {message}");
+                Console.WriteLine(JsonConvert.SerializeObject(payload));
             });
 
             await connection.StartAsync().ConfigureAwait(false);
