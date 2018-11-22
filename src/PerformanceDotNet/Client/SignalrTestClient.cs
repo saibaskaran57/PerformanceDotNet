@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.SignalR.Client;
@@ -18,6 +17,9 @@
         private readonly Dictionary<string, List<Dictionary<string, object>>> data;
         private readonly Func<Task> testFunction;
         private HubConnection connection;
+        private int requestIndex = 0;
+        private int numOfRequests = 0;
+        private List<Dictionary<string, object>> requestPool;
 
         public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval)
         {
@@ -26,22 +28,22 @@
             this.responseMethodName = responseMethodName;
             this.totalRequest = totalRequest;
             this.data = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string,object>>>>(data);
-            //this.data = new List<object>();
-            Func <Task> testRunAction;
+            Func <object, Task> testRunAction;
 
-            var firstRequest = this.data["Request"].First();
+            requestPool = PrepareData(this.data["Request"], configuration.Count);
+
             switch (type)
             {
                 case TestMode.Single:
                 case TestMode.Burst:
-                    testRunAction = async () =>
+                    testRunAction = async (request) =>
                     {
-                        await connection.InvokeAsync<object>(this.methodName, firstRequest).ConfigureAwait(false);
+                        await connection.InvokeAsync<object>(this.methodName, request).ConfigureAwait(false);
                     };
                     break;
                 case TestMode.Stream:
                     var datas = this.data;
-                    testRunAction = async () =>
+                    testRunAction = async (request) =>
                     {
                         await ReadStream(connection, datas).ConfigureAwait(false);
                     };
@@ -64,13 +66,12 @@
                     while (currentInterval - startTime < testDuration)
                     {
                         var tasks = new List<Task>();
-                        for (int i = 1; i <= configuration.Count; i++)
+                        for (int i = 0; i < configuration.Count; i++)
                         {
-                            currentTask = testRunAction.Invoke();
+                            currentTask = testRunAction.Invoke(requestPool[i]);
                             tasks.Add(currentTask);
                             mainTasksList.Add(currentTask);
                         }
-
 
                         while (Environment.TickCount - currentInterval < testInterval)
                         {
@@ -85,9 +86,9 @@
             {
                 testFunction = async () =>
                 {
-                    for (int i = 1; i <= configuration.Count; i++)
+                    for (int i = 0; i < configuration.Count; i++)
                     {
-                        await testRunAction.Invoke().ConfigureAwait(false);
+                        await testRunAction.Invoke(requestPool[i]).ConfigureAwait(false);
                     }
                 };
             }
@@ -126,15 +127,22 @@
             }
         }
 
-        private static IList<string> PrepareData(int count, string data)
+        private List<Dictionary<string, object>> PrepareData(List<Dictionary<string, object>> requests, int numberOfData)
         {
-            var datas = new List<string>();
+            var datas = new List<Dictionary<string, object>>();
+            int index = 0;
 
-            for (int i = 1; i <= count; i++)
+            for (int i = 1; i <= numberOfData; i++)
             {
-                datas.Add(data);
+                datas.Add(requests[index]);
+                index++;
+                if (index == requests.Count)
+                {
+                    index = 0;
+                }
             }
 
+            numOfRequests = datas.Count;
             return datas;
         }
     }
