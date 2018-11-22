@@ -97,7 +97,10 @@
         public async Task ExecuteAsync()
         {
             connection = new HubConnectionBuilder()
-                 .WithUrl(this.endpoint)
+                 .WithUrl(this.endpoint, options =>
+                 {
+                     options.Headers.Add("Auth-Token", "TEST");
+                 })
                  .Build();
 
             connection.On<object>(this.responseMethodName, (payload) =>
