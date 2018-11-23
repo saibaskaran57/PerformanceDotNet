@@ -1,7 +1,7 @@
 ﻿{
 	"Request":[
 		{ "Email": "test1@example.com", "Version":"1.0", "ReferenceId": "RefId 1"},
-		{ "Email": "test2@example.com", "Version":"1.0", "ReferenceId": "RefId 2"},
+		{ "Number": "12345678", "Version":"1.0", "ReferenceId": "RefId 2"},
 		{ "Email": "test3@example.com", "Version":"1.0", "ReferenceId": "RefId 3"},
 		{ "Email": "test4@example.com", "Version":"1.0", "ReferenceId": "RefId 4"}
 	]

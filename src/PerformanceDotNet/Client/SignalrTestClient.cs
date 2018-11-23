@@ -14,7 +14,7 @@
         private readonly string methodName;
         private readonly string responseMethodName;
         private readonly int totalRequest;
-        private readonly int authToken;
+        private readonly string authToken;
         private readonly Dictionary<string, List<Dictionary<string, object>>> data;
         private readonly Func<Task> testFunction;
         private HubConnection connection;
