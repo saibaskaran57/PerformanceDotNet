@@ -23,5 +23,7 @@
         public string StreamMethod { get; set; }
 
         public string StreamResponseMethod { get; set; }
+
+        public string AuthToken { get; set; }
     }
 }

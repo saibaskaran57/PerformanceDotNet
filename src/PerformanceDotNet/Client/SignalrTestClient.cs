@@ -14,6 +14,7 @@
         private readonly string methodName;
         private readonly string responseMethodName;
         private readonly int totalRequest;
+        private readonly int authToken;
         private readonly Dictionary<string, List<Dictionary<string, object>>> data;
         private readonly Func<Task> testFunction;
         private HubConnection connection;
@@ -21,12 +22,13 @@
         private int numOfRequests = 0;
         private List<Dictionary<string, object>> requestPool;
 
-        public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval)
+        public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval, string authToken)
         {
             this.endpoint = endpoint;
             this.methodName = methodName;
             this.responseMethodName = responseMethodName;
             this.totalRequest = totalRequest;
+            this.authToken = authToken;
             this.data = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string,object>>>>(data);
             Func <object, Task> testRunAction;
 
@@ -99,7 +101,7 @@
             connection = new HubConnectionBuilder()
                  .WithUrl(this.endpoint, options =>
                  {
-                     options.Headers.Add("Auth-Token", "TEST");
+                     options.Headers.Add("Auth-Token", authToken);
                  })
                  .Build();
 
