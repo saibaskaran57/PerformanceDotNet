@@ -25,5 +25,7 @@
         public string StreamResponseMethod { get; set; }
 
         public string AuthToken { get; set; }
+
+        public bool EnableMessagePackStreaming { get; set; }
     }
 }

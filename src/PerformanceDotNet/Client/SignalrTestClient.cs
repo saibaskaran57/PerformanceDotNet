@@ -5,6 +5,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.SignalR.Client;
+    using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
     using PerformanceDotNet.Models;
 
@@ -17,18 +18,20 @@
         private readonly string authToken;
         private readonly Dictionary<string, List<Dictionary<string, object>>> data;
         private readonly Func<Task> testFunction;
+        private readonly bool useMessagePack;
+
         private HubConnection connection;
-        private int requestIndex = 0;
         private int numOfRequests = 0;
         private List<Dictionary<string, object>> requestPool;
 
-        public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval, string authToken)
+        public SignalrTestClient(string endpoint, string methodName, string responseMethodName, int totalRequest, string data, TestMode type, RequestConfiguration configuration, long testDuration, long testInterval, string authToken, bool useMessagePack)
         {
             this.endpoint = endpoint;
             this.methodName = methodName;
             this.responseMethodName = responseMethodName;
             this.totalRequest = totalRequest;
             this.authToken = authToken;
+            this.useMessagePack = useMessagePack;
             this.data = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string,object>>>>(data);
             Func <object, Task> testRunAction;
 
@@ -98,16 +101,30 @@
 
         public async Task ExecuteAsync()
         {
-            connection = new HubConnectionBuilder()
-                 .WithUrl(this.endpoint, options =>
-                 {
-                     options.Headers.Add("Auth-Token", authToken);
-                 })
-                 .Build();
+            if (this.useMessagePack)
+            {
+                connection = new HubConnectionBuilder()
+                     .WithUrl(this.endpoint, options =>
+                     {
+                         options.Headers.Add("Auth-Token", authToken);
+                     })
+                     .AddMessagePackProtocol()
+                     .Build();
+            }
+            else
+            {
+                connection = new HubConnectionBuilder()
+                                .WithUrl(this.endpoint, options =>
+                                {
+                                    options.Headers.Add("Auth-Token", authToken);
+                                })
+                                .Build();
+            }
 
             connection.On<object>(this.responseMethodName, (payload) =>
             {
                 Console.WriteLine(JsonConvert.SerializeObject(payload));
+                Console.WriteLine();
             });
 
             await connection.StartAsync().ConfigureAwait(false);
