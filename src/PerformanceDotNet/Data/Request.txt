@@ -1,5 +1,5 @@
 ﻿{
 	"Request":[
-		{ "email":"kevin.chooi@gmail.com", "version":"1.0", "reference_id": "RefId 1"},
+		{ "email":"kevin.chooi@gmail.com", "version":"1.0", "reference_id": "OmegaTest"},
 	]
 }
